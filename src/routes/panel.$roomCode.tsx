@@ -106,28 +106,33 @@ function PanelPage() {
     if (recentlyEnded && recentlyEnded.id !== lastEndedMeetingId) {
       setLastEndedMeetingId(recentlyEnded.id);
       
-      // Play ramping alert sound (up to 200% volume)
-      const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
-      audio.crossOrigin = "anonymous";
-      
-      try {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const source = audioContext.createMediaElementSource(audio);
-        const gainNode = audioContext.createGain();
+      const playLoudSound = () => {
+        const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+        audio.crossOrigin = "anonymous";
         
-        source.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        // Start at 0.5 (50%) and ramp to 2.0 (200%) over 3 seconds
-        gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
-        gainNode.gain.linearRampToValueAtTime(2.0, audioContext.currentTime + 3);
-        
-        audio.play().catch(err => console.warn("Audio playback failed:", err));
-      } catch (e) {
-        // Fallback if Web Audio API fails
-        audio.volume = 1.0;
-        audio.play().catch(err => console.warn("Fallback audio playback failed:", err));
-      }
+        try {
+          const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+          const source = audioContext.createMediaElementSource(audio);
+          const gainNode = audioContext.createGain();
+          
+          source.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          // Start at 0.5 (50%) and ramp to 2.0 (200%) over 3 seconds
+          gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+          gainNode.gain.linearRampToValueAtTime(2.0, audioContext.currentTime + 3);
+          
+          audio.play().catch(err => console.warn("Audio playback failed:", err));
+        } catch (e) {
+          // Fallback if Web Audio API fails
+          audio.volume = 1.0;
+          audio.play().catch(err => console.warn("Fallback audio playback failed:", err));
+        }
+      };
+
+      // Play twice: once immediately, and once after a 4-second delay
+      playLoudSound();
+      setTimeout(playLoudSound, 4000);
     }
   }, [now, bookings, lastEndedMeetingId]);
 
