@@ -19,11 +19,14 @@ export const Route = createFileRoute("/panel/$roomCode")({
 
 function PanelPage() {
   const { roomCode } = Route.useParams();
+  console.log("PanelPage mounting for room:", roomCode);
   const [room, setRoom] = useState<Room | null | undefined>(undefined);
   const [online, setOnline] = useState(true);
+  const [lastEndedMeetingId, setLastEndedMeetingId] = useState<string | null>(null);
 
   // Fullscreen logic
   useEffect(() => {
+    console.log("Fullscreen effect running");
     const enterFullscreen = async () => {
       try {
         if (!document.fullscreenElement) {
@@ -34,11 +37,12 @@ function PanelPage() {
       }
     };
 
-    // Attempt on mount (may be blocked by browser)
-    enterFullscreen();
+    // Attempt on mount removed as it's often blocked and can cause issues
+    // enterFullscreen();
 
     // Also attempt on first click anywhere
     const handleFirstClick = () => {
+      console.log("First click detected, requesting fullscreen");
       enterFullscreen();
       window.removeEventListener("click", handleFirstClick);
     };
@@ -48,13 +52,20 @@ function PanelPage() {
   }, []);
 
   useEffect(() => {
+    console.log("Room fetch effect running for:", roomCode);
     let mounted = true;
     supabase
       .from("rooms")
       .select("*")
       .eq("code", roomCode)
       .maybeSingle()
-      .then(({ data }) => mounted && setRoom((data as Room) ?? null));
+      .then(({ data, error }) => {
+        if (error) console.error("Error fetching room:", error);
+        if (mounted) {
+          console.log("Room data fetched:", data);
+          setRoom((data as Room) ?? null);
+        }
+      });
     const handleOnline = () => setOnline(true);
     const handleOffline = () => setOnline(false);
     window.addEventListener("online", handleOnline);
@@ -80,6 +91,27 @@ function PanelPage() {
     const id = setInterval(beat, 30000);
     return () => clearInterval(id);
   }, [room?.id]);
+
+  // Alert logic: play sound when a meeting ends
+  useEffect(() => {
+    if (!bookings || bookings.length === 0) return;
+
+    // Find the meeting that just ended (ended within the last 5 seconds)
+    const recentlyEnded = bookings.find((b) => {
+      const endTime = new Date(b.end_time).getTime();
+      const currentTime = now.getTime();
+      return currentTime >= endTime && currentTime < endTime + 5000 && !b.cancelled;
+    });
+
+    if (recentlyEnded && recentlyEnded.id !== lastEndedMeetingId) {
+      setLastEndedMeetingId(recentlyEnded.id);
+      
+      // Play alert sound
+      const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+      audio.volume = 0.5;
+      audio.play().catch(err => console.warn("Audio playback failed (usually requires interaction):", err));
+    }
+  }, [now, bookings, lastEndedMeetingId]);
 
   if (room === undefined) {
     return (
@@ -128,16 +160,16 @@ function PanelPage() {
         }}
       />
 
-      <div className="relative h-screen flex flex-col p-6 md:p-10 lg:p-16">
+      <div className="relative h-screen flex flex-col p-4 md:p-8 lg:p-12 overflow-hidden">
         {/* Top bar */}
-        <div className="flex items-center justify-between text-white/85 flex-wrap gap-4">
+        <div className="flex items-center justify-between text-white/85 flex-wrap gap-2 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-white/15 backdrop-blur grid place-items-center overflow-hidden shrink-0">
-              <img src="/favicon.ico" alt="Atrium" className="h-7 w-7 md:h-8 md:w-8 object-contain" />
+            <div className="h-9 w-9 md:h-11 md:w-11 rounded-xl bg-white/15 backdrop-blur grid place-items-center overflow-hidden shrink-0">
+              <img src="/favicon.ico" alt="Atrium" className="h-6 w-6 md:h-8 md:w-8 object-contain" />
             </div>
             <div>
               <div className="text-[10px] md:text-sm uppercase tracking-[0.25em] opacity-80">Atrium</div>
-              <div className="text-base md:text-lg font-medium leading-tight">{room.floor}</div>
+              <div className="text-sm md:text-lg font-medium leading-tight">{room.floor}</div>
             </div>
           </div>
           <div className="flex items-center gap-4 md:gap-6 text-sm">
@@ -150,60 +182,60 @@ function PanelPage() {
         </div>
 
         {/* Center */}
-        <div className="flex-1 flex flex-col justify-center text-center py-8">
-          <h1 className="text-5xl sm:text-7xl lg:text-9xl font-semibold tracking-tight leading-[0.95] text-balance mx-auto">
+        <div className="flex-1 flex flex-col justify-center text-center min-h-0 py-2 md:py-4">
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl xl:text-8xl font-semibold tracking-tight leading-none text-balance mx-auto shrink-0">
             {stateLabel}
           </h1>
-          <div className="mt-3 md:mt-4 text-white/80 text-lg md:text-2xl lg:text-3xl tracking-[0.1em] font-medium uppercase px-4">{room.name}</div>
+          <div className="mt-1 md:mt-2 text-white/80 text-sm md:text-lg lg:text-xl tracking-[0.1em] font-medium uppercase px-4 shrink-0">{room.name}</div>
 
           {current ? (
-            <div className="mt-8 md:mt-10 max-w-4xl mx-auto px-4">
-              <div className="text-white/70 uppercase tracking-widest text-[10px] md:text-sm">Current meeting</div>
-              <div className="mt-1 md:mt-2 text-2xl md:text-4xl lg:text-5xl font-medium line-clamp-2">{current.title}</div>
-              <div className="mt-1 md:mt-2 text-lg md:text-2xl text-white/80">
+            <div className="mt-2 md:mt-4 max-w-4xl mx-auto px-4 overflow-hidden flex flex-col shrink">
+              <div className="text-white/70 uppercase tracking-widest text-[9px] md:text-xs shrink-0">Current meeting</div>
+              <div className="mt-0.5 md:mt-1 text-lg md:text-2xl lg:text-3xl font-medium line-clamp-1 shrink-0">{current.title}</div>
+              <div className="mt-0.5 md:mt-1 text-sm md:text-lg text-white/80 truncate shrink-0">
                 {current.organizer} · {formatTime(current.start_time)} – {formatTime(current.end_time)}
               </div>
             </div>
           ) : (
-            <div className="mt-8 md:mt-10 text-xl md:text-3xl lg:text-4xl text-white/85 italic px-4">
+            <div className="mt-2 md:mt-4 text-base md:text-xl lg:text-2xl text-white/85 italic px-4 shrink-0">
               This space is ready when you are.
             </div>
           )}
 
-          <div className="mt-8 md:mt-10 inline-flex items-center gap-3 self-center rounded-full bg-white/15 backdrop-blur px-4 py-2 md:px-5 md:py-2.5 text-base md:text-lg tabular-nums">
-            <span className="h-2 w-2 md:h-2.5 md:w-2.5 rounded-full bg-white animate-pulse" />
+          <div className="mt-3 md:mt-6 inline-flex items-center gap-2 md:gap-3 self-center rounded-full bg-white/15 backdrop-blur px-3 py-1.5 md:px-5 md:py-2 text-xs md:text-base tabular-nums shrink-0">
+            <span className="h-1.5 w-1.5 md:h-2 md:w-2 rounded-full bg-white animate-pulse" />
             {countdownLabel}
           </div>
         </div>
 
         {/* Bottom: Next meetings */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-auto">
-          <div className="rounded-2xl bg-white/10 backdrop-blur p-4 md:p-6 border border-white/15">
-            <div className="text-white/70 uppercase tracking-widest text-[10px] md:text-xs">Up next</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-8 shrink-0">
+          <div className="rounded-2xl md:rounded-3xl bg-white/10 backdrop-blur-xl p-4 md:p-6 lg:p-8 border border-white/20 shadow-2xl flex flex-col justify-center min-h-0">
+            <div className="text-white/60 uppercase tracking-[0.2em] text-[9px] md:text-xs font-bold shrink-0">Up next</div>
             {next ? (
-              <div className="mt-1 md:mt-2">
-                <div className="text-xl md:text-2xl font-medium truncate">{next.title}</div>
-                <div className="text-white/80 text-sm md:text-base">
+              <div className="mt-1 md:mt-2 shrink-0">
+                <div className="text-lg md:text-2xl lg:text-3xl font-semibold truncate leading-tight">{next.title}</div>
+                <div className="mt-0.5 md:mt-1 text-sm md:text-lg text-white/80 font-medium">
                   {next.organizer} · {formatTime(next.start_time)} – {formatTime(next.end_time)}
                 </div>
               </div>
             ) : (
-              <div className="mt-1 md:mt-2 text-white/80 text-sm md:text-base">No upcoming meetings today.</div>
+              <div className="mt-1 md:mt-2 text-white/80 text-sm md:text-lg italic shrink-0">No upcoming meetings today.</div>
             )}
           </div>
-          <div className="hidden sm:block rounded-2xl bg-white/10 backdrop-blur p-4 md:p-6 border border-white/15">
-            <div className="text-white/70 uppercase tracking-widest text-[10px] md:text-xs">Today</div>
-            <div className="mt-1 md:mt-2 space-y-1 max-h-24 md:max-h-32 overflow-hidden">
-              {(bookings ?? []).slice(0, 4).map((b) => (
-                <div key={b.id} className="flex justify-between text-white/90 text-sm md:text-base">
-                  <span className="truncate pr-3">{b.title}</span>
-                  <span className="tabular-nums text-white/70 shrink-0">
-                    {formatTime(b.start_time)}–{formatTime(b.end_time)}
+          <div className="hidden sm:flex rounded-2xl md:rounded-3xl bg-white/10 backdrop-blur-xl p-4 md:p-6 lg:p-8 border border-white/20 shadow-2xl flex flex-col justify-center min-h-0">
+            <div className="text-white/60 uppercase tracking-[0.2em] text-[9px] md:text-xs font-bold shrink-0">Today's Schedule</div>
+            <div className="mt-1 md:mt-2 space-y-1 md:space-y-1.5 overflow-hidden shrink">
+              {(bookings ?? []).filter(b => !b.cancelled).slice(0, 2).map((b) => (
+                <div key={b.id} className="flex justify-between items-center text-white/90 text-xs md:text-base border-b border-white/5 pb-0.5 last:border-0">
+                  <span className="truncate pr-4 font-medium">{b.title}</span>
+                  <span className="tabular-nums text-white/60 shrink-0 font-light">
+                    {formatTime(b.start_time)} – {formatTime(b.end_time)}
                   </span>
                 </div>
               ))}
-              {(bookings ?? []).length === 0 && (
-                <div className="text-white/70 text-sm md:text-base">Nothing scheduled.</div>
+              {(bookings ?? []).filter(b => !b.cancelled).length === 0 && (
+                <div className="text-white/80 text-sm md:text-base italic">Nothing scheduled.</div>
               )}
             </div>
           </div>
