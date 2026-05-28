@@ -76,39 +76,8 @@ function HomePage() {
     <div className="min-h-screen">
       <Header />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-hero opacity-95" />
-        <div className="absolute inset-0 opacity-30 mix-blend-overlay"
-          style={{
-            backgroundImage:
-              "radial-gradient(800px 400px at 20% 20%, rgba(255,255,255,.35), transparent 60%), radial-gradient(600px 300px at 80% 80%, rgba(255,255,255,.2), transparent 60%)",
-          }}
-        />
-        <div className="relative mx-auto max-w-7xl px-6 pt-20 pb-28 text-primary-foreground">
-          <Badge className="bg-white/15 border-white/20 text-white hover:bg-white/20 backdrop-blur">
-            <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Live workspace intelligence
-          </Badge>
-          <h1 className="mt-6 text-5xl md:text-7xl font-semibold tracking-tight text-balance leading-[1.05]">
-            The atrium of your<br />
-            <span className="italic font-normal opacity-90">collaborative workplace.</span>
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg text-white/80 text-balance">
-            Discover every meeting space across the building, see who's in
-            session, and reserve the perfect room in seconds — all in real time.
-          </p>
-
-          <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl">
-            <StatPill label="Total rooms" value={stats.total} />
-            <StatPill label="Available" value={stats.available} accent="success" />
-            <StatPill label="Reserved soon" value={stats.soon} accent="warning" />
-            <StatPill label="In session" value={stats.occupied} accent="danger" />
-          </div>
-        </div>
-      </section>
-
       {/* Controls */}
-      <section className="mx-auto max-w-7xl px-6 -mt-14 relative">
+      <section className="mx-auto max-w-7xl px-6 py-8">
         <div className="glass rounded-2xl shadow-elegant p-4 md:p-5 flex flex-col md:flex-row gap-3 md:items-center">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -133,7 +102,7 @@ function HomePage() {
       </section>
 
       {/* Rooms */}
-      <section className="mx-auto max-w-7xl px-6 py-14">
+      <section className="mx-auto max-w-7xl px-6 pb-14">
         <div className="flex items-end justify-between mb-8">
           <div>
             <h2 className="text-3xl font-semibold tracking-tight">Meeting rooms</h2>
