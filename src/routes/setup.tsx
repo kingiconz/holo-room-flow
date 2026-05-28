@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Building2, Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { DeviceRow, Room } from "@/lib/rooms";
 
@@ -110,8 +110,8 @@ function SetupPage() {
         }}
       />
       <div className="relative max-w-xl w-full text-center animate-fade-in">
-        <div className="mx-auto h-16 w-16 rounded-2xl bg-white/15 backdrop-blur grid place-items-center mb-8 border border-white/20">
-          <Building2 className="h-8 w-8" />
+        <div className="mx-auto h-16 w-16 grid place-items-center mb-8 overflow-hidden">
+          <img src="/favicon.ico" alt="Atrium" className="h-full w-full object-contain" />
         </div>
         <div className="text-xs uppercase tracking-[0.35em] text-white/70">
           Tablet Provisioning

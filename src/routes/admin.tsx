@@ -203,8 +203,8 @@ function AdminDashboard({ email }: { email: string }) {
       <header className="border-b border-border bg-card/70 backdrop-blur sticky top-0 z-20">
         <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-gradient-primary grid place-items-center shadow-soft">
-              <Building2 className="h-5 w-5 text-white" />
+            <div className="h-9 w-9 grid place-items-center overflow-hidden">
+              <img src="/favicon.ico" alt="Atrium" className="h-full w-full object-contain" />
             </div>
             <div>
               <div className="font-semibold tracking-tight">Atrium Admin</div>

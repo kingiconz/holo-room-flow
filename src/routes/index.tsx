@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Building2, Search, CalendarDays, Sparkles, MapPin, Clock, ArrowRight } from "lucide-react";
+import { Search, CalendarDays, Sparkles, MapPin, Clock, ArrowRight } from "lucide-react";
 import { useRooms, useBookings, useNow } from "@/lib/use-realtime";
 import {
   getRoomStatus,
@@ -188,8 +188,8 @@ function Header() {
     <header className="sticky top-0 z-30 glass border-b border-white/40">
       <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
-          <div className="h-9 w-9 rounded-xl bg-gradient-primary grid place-items-center shadow-soft">
-            <Building2 className="h-5 w-5 text-white" />
+          <div className="h-9 w-9 grid place-items-center overflow-hidden">
+            <img src="/favicon.ico" alt="Atrium" className="h-full w-full object-contain" />
           </div>
           <div>
             <div className="text-lg font-semibold tracking-tight leading-none">Atrium</div>

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Building2, Wifi, WifiOff } from "lucide-react";
+import { Wifi, WifiOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBookings, useNow } from "@/lib/use-realtime";
 import {
@@ -107,8 +107,8 @@ function PanelPage() {
         {/* Top bar */}
         <div className="flex items-center justify-between text-white/85">
           <div className="flex items-center gap-3">
-            <div className="h-11 w-11 rounded-xl bg-white/15 backdrop-blur grid place-items-center">
-              <Building2 className="h-6 w-6" />
+            <div className="h-11 w-11 grid place-items-center overflow-hidden">
+              <img src="/favicon.ico" alt="Atrium" className="h-full w-full object-contain" />
             </div>
             <div>
               <div className="text-sm uppercase tracking-[0.25em] opacity-80">Atrium</div>
@@ -125,14 +125,14 @@ function PanelPage() {
         </div>
 
         {/* Center */}
-        <div className="flex-1 flex flex-col justify-center">
-          <div className="text-white/80 text-xl tracking-[0.3em] uppercase">{stateLabel}</div>
-          <h1 className="mt-4 text-7xl lg:text-9xl font-semibold tracking-tight leading-[0.95] text-balance">
-            {room.name}
+        <div className="flex-1 flex flex-col justify-center text-center">
+          <div className="text-white/80 text-2xl lg:text-3xl tracking-[0.1em] font-medium uppercase">{room.name}</div>
+          <h1 className="mt-2 text-7xl lg:text-9xl font-semibold tracking-tight leading-[0.95] text-balance mx-auto">
+            {stateLabel}
           </h1>
 
           {current ? (
-            <div className="mt-10 max-w-4xl">
+            <div className="mt-10 max-w-4xl mx-auto">
               <div className="text-white/70 uppercase tracking-widest text-sm">Current meeting</div>
               <div className="mt-2 text-4xl lg:text-5xl font-medium">{current.title}</div>
               <div className="mt-2 text-2xl text-white/80">
@@ -145,7 +145,7 @@ function PanelPage() {
             </div>
           )}
 
-          <div className="mt-10 inline-flex items-center gap-3 self-start rounded-full bg-white/15 backdrop-blur px-5 py-2.5 text-lg tabular-nums">
+          <div className="mt-10 inline-flex items-center gap-3 self-center rounded-full bg-white/15 backdrop-blur px-5 py-2.5 text-lg tabular-nums">
             <span className="h-2.5 w-2.5 rounded-full bg-white animate-pulse" />
             {countdownLabel}
           </div>
