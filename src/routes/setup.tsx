@@ -9,10 +9,24 @@ export const Route = createFileRoute("/setup")({
   component: SetupPage,
 });
 
-function generateDeviceId(): string {
-  // Random padded 3-digit number with timestamp salt
-  const n = (Math.floor(Math.random() * 999) + 1).toString().padStart(3, "0");
-  return `ROOMTAB-${n}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
+async function generateSequentialDeviceId(): Promise<string> {
+  const { data: devices } = await supabase
+    .from("devices")
+    .select("device_id");
+
+  let maxSequence = 0;
+  if (devices) {
+    devices.forEach((d) => {
+      const match = d.device_id.match(/eCB-TAB303-(\d{3})/);
+      if (match) {
+        const seq = parseInt(match[1], 10);
+        if (seq > maxSequence) maxSequence = seq;
+      }
+    });
+  }
+
+  const nextSequence = (maxSequence + 1).toString().padStart(3, "0");
+  return `eCB-TAB303-${nextSequence}`;
 }
 
 function SetupPage() {
@@ -26,10 +40,12 @@ function SetupPage() {
     let mounted = true;
     (async () => {
       let id = localStorage.getItem("atrium.deviceId");
+      
       if (!id) {
-        id = generateDeviceId();
+        id = await generateSequentialDeviceId();
         localStorage.setItem("atrium.deviceId", id);
       }
+      
       if (!mounted) return;
       setDeviceId(id);
 
