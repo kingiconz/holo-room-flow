@@ -4,11 +4,8 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
-  HeadContent,
-  Scripts,
 } from "@tanstack/react-router";
 
-import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -61,48 +58,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { name: "theme-color", content: "#1f3a8a" },
-      { title: "Atrium — Meeting Room Management" },
-      {
-        name: "description",
-        content:
-          "Enterprise meeting room booking, real-time occupancy panels, and device provisioning.",
-      },
-      { property: "og:title", content: "Atrium — Meeting Room Management" },
-      { name: "twitter:title", content: "Atrium — Meeting Room Management" },
-      { name: "description", content: "RoomFlow Pro is a web app for smart offices to manage meeting room bookings and display real-time status." },
-      { property: "og:description", content: "RoomFlow Pro is a web app for smart offices to manage meeting room bookings and display real-time status." },
-      { name: "twitter:description", content: "RoomFlow Pro is a web app for smart offices to manage meeting room bookings and display real-time status." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0a51b4f5-18bf-4b68-8f90-a31aba0894ab/id-preview-53711046--fdf00a11-a7b2-4737-b05e-7fa2288eff6b.lovable.app-1779974394086.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0a51b4f5-18bf-4b68-8f90-a31aba0894ab/id-preview-53711046--fdf00a11-a7b2-4737-b05e-7fa2288eff6b.lovable.app-1779974394086.png" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { property: "og:type", content: "website" },
-    ],
-    links: [{ rel: "stylesheet", href: appCss }],
-  }),
-  shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
-
-function RootShell({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();

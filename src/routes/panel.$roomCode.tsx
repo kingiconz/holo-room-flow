@@ -11,9 +11,6 @@ import {
 } from "@/lib/rooms";
 
 export const Route = createFileRoute("/panel/$roomCode")({
-  head: ({ params }) => ({
-    meta: [{ title: `Room Panel · ${params.roomCode.toUpperCase()}` }],
-  }),
   component: PanelPage,
 });
 
@@ -185,14 +182,24 @@ function PanelPage() {
 
       <div className="relative h-screen flex flex-col p-4 md:p-8 lg:p-12 overflow-hidden">
         {/* Top bar */}
-        <div className="flex items-center justify-between text-white/85 flex-wrap gap-2 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 md:h-11 md:w-11 rounded-xl bg-white/15 backdrop-blur grid place-items-center overflow-hidden shrink-0">
-              <img src="/favicon.ico" alt="Atrium" className="h-6 w-6 md:h-8 md:w-8 object-contain" />
+        <div className="flex items-center justify-between text-white/85 flex-wrap gap-4 shrink-0">
+          <div className="flex items-center gap-5">
+            <div className="h-12 w-auto flex items-center shrink-0">
+              <img 
+                src="/logo.png" 
+                alt="Atrium" 
+                className="h-full w-auto object-contain"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = "https://e-crimebureau.com/wp-content/uploads/2025/10/cropped-APPROVED-NEW-LOGO.png";
+                }}
+              />
             </div>
-            <div>
-              <div className="text-[10px] md:text-sm uppercase tracking-[0.25em] opacity-80">Atrium</div>
-              <div className="text-sm md:text-lg font-medium leading-tight">{room.floor}</div>
+            <div className="flex flex-col">
+              <div className="text-2xl font-bold tracking-tight leading-none">Atrium</div>
+              <div className="text-[10px] uppercase tracking-[0.3em] opacity-80 mt-1 font-medium">
+                Workspace
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-4 md:gap-6 text-sm">

@@ -27,7 +27,6 @@ import {
 } from "@/components/ui/select";
 
 export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "Atrium · Admin" }, { name: "robots", content: "noindex" }] }),
   component: AdminPage,
 });
 
@@ -203,8 +202,16 @@ function AdminDashboard({ email }: { email: string }) {
       <header className="border-b border-border bg-card/70 backdrop-blur sticky top-0 z-20">
         <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 grid place-items-center overflow-hidden">
-              <img src="/favicon.ico" alt="Atrium" className="h-full w-full object-contain" />
+            <div className="h-10 w-auto flex items-center">
+              <img 
+                src="/logo.png" 
+                alt="Atrium" 
+                className="h-full w-auto object-contain"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = "https://e-crimebureau.com/wp-content/uploads/2025/10/cropped-APPROVED-NEW-LOGO.png";
+                }}
+              />
             </div>
             <div>
               <div className="font-semibold tracking-tight">Atrium Admin</div>

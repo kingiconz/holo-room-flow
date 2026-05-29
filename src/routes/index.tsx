@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Search, CalendarDays, Sparkles, MapPin, Clock, ArrowRight } from "lucide-react";
 import { useRooms, useBookings, useNow } from "@/lib/use-realtime";
@@ -22,18 +22,17 @@ import {
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Capacitor } from "@capacitor/core";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Atrium — Find & book a meeting room" },
-      {
-        name: "description",
-        content:
-          "Browse every meeting room across the building, see live availability, and book instantly.",
-      },
-    ],
-  }),
+  beforeLoad: () => {
+    // If running on a native device (APK), automatically redirect to setup
+    if (Capacitor.isNativePlatform()) {
+      throw redirect({
+        to: "/setup",
+      });
+    }
+  },
   component: HomePage,
 });
 
@@ -157,9 +156,17 @@ function Header() {
     <header className="sticky top-0 z-30 glass border-b border-white/40">
       <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
-          <div className="h-9 w-9 grid place-items-center overflow-hidden">
-            <img src="/favicon.ico" alt="Atrium" className="h-full w-full object-contain" />
-          </div>
+          <div className="h-12 w-auto flex items-center">
+              <img 
+                src="/logo.png" 
+                alt="Atrium" 
+                className="h-full w-auto object-contain"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = "https://e-crimebureau.com/wp-content/uploads/2025/10/cropped-APPROVED-NEW-LOGO.png";
+                }}
+              />
+            </div>
           <div>
             <div className="text-lg font-semibold tracking-tight leading-none">Atrium</div>
             <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">

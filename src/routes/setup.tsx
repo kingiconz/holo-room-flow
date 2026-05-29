@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import type { DeviceRow, Room } from "@/lib/rooms";
 
 export const Route = createFileRoute("/setup")({
-  head: () => ({ meta: [{ title: "Atrium · Tablet Setup" }] }),
   component: SetupPage,
 });
 
@@ -126,8 +125,17 @@ function SetupPage() {
         }}
       />
       <div className="relative max-w-xl w-full text-center animate-fade-in">
-        <div className="mx-auto h-16 w-16 grid place-items-center mb-8 overflow-hidden">
-          <img src="/favicon.ico" alt="Atrium" className="h-full w-full object-contain" />
+        <div className="mx-auto h-40 w-auto flex items-center justify-center mb-10">
+          <img 
+            src="/logo.png" 
+            alt="Atrium" 
+            className="h-full w-auto object-contain"
+            style={{ maxWidth: "100%", maxHeight: "160px" }}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = "https://e-crimebureau.com/wp-content/uploads/2025/10/cropped-APPROVED-NEW-LOGO.png";
+            }}
+          />
         </div>
         <div className="text-xs uppercase tracking-[0.35em] text-white/70">
           Tablet Provisioning

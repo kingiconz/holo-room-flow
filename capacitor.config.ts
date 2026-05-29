@@ -3,9 +3,9 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.atrium.workspace',
   appName: 'Atrium',
-  webDir: 'www',
+  webDir: 'dist',
   server: {
-    url: 'https://holo-room-flow.lovable.app',
+    androidScheme: 'https',
     cleartext: true
   },
   plugins: {
