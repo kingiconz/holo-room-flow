@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Loader2, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { DeviceRow, Room } from "@/lib/rooms";
+import { setLedColor } from "@/plugins/ledBridge";
 
 export const Route = createFileRoute("/setup")({
   component: SetupPage,
@@ -33,6 +34,12 @@ function SetupPage() {
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [registering, setRegistering] = useState(true);
   const [assignedRoom, setAssignedRoom] = useState<Room | null>(null);
+
+  // Set LED to YELLOW while in setup
+  useEffect(() => {
+    console.log("[LED] Setting color to YELLOW for setup");
+    setLedColor("YELLOW");
+  }, []);
 
   // Register on mount
   useEffect(() => {
@@ -141,7 +148,7 @@ function SetupPage() {
           Tablet Provisioning
         </div>
         <h1 className="mt-3 text-4xl md:text-5xl font-semibold tracking-tight">
-          {assignedRoom ? "Assignment received" : "Waiting for room assignment"}
+          {assignedRoom ? "Assignment received" : "Waiting for Room Assignment"}
         </h1>
         <p className="mt-4 text-white/75 max-w-md mx-auto">
           {assignedRoom

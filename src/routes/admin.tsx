@@ -111,8 +111,16 @@ function AdminAuth() {
     <div className="min-h-screen grid place-items-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8 animate-fade-in">
-          <div className="mx-auto h-12 w-12 rounded-xl bg-gradient-primary grid place-items-center shadow-elegant">
-            <Shield className="h-6 w-6 text-white" />
+          <div className="mx-auto h-16 w-auto flex items-center justify-center mb-4">
+            <img 
+              src="/logo.png" 
+              alt="e-Crime Bureau" 
+              className="h-full w-auto object-contain"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = "https://e-crimebureau.com/wp-content/uploads/2025/10/cropped-APPROVED-NEW-LOGO.png";
+              }}
+            />
           </div>
           <h1 className="mt-4 text-3xl font-semibold tracking-tight">Administrator</h1>
           <p className="text-muted-foreground mt-1">Restricted access · Atrium control plane</p>
@@ -164,7 +172,17 @@ function NotAuthorized({ email, userId, onPromoted }: { email: string; userId: s
   return (
     <div className="min-h-screen grid place-items-center px-4">
       <div className="max-w-md text-center space-y-4">
-        <Shield className="h-10 w-10 mx-auto text-primary" />
+        <div className="mx-auto h-20 w-auto flex items-center justify-center">
+          <img 
+            src="/logo.png" 
+            alt="e-Crime Bureau" 
+            className="h-full w-auto object-contain"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = "https://e-crimebureau.com/wp-content/uploads/2025/10/cropped-APPROVED-NEW-LOGO.png";
+            }}
+          />
+        </div>
         <h1 className="text-2xl font-semibold">Access pending</h1>
         <p className="text-muted-foreground">
           Signed in as <span className="font-medium">{email}</span>, but this account is not an

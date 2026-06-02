@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { setLedColor, type LedColor } from "@/plugins/ledBridge";
 import { Wifi, WifiOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBookings, useNow } from "@/lib/use-realtime";
@@ -76,6 +77,34 @@ function PanelPage() {
 
   const bookings = useBookings({ roomId: room?.id });
   const now = useNow(1000);
+  const { status, current, next } = getRoomStatus(bookings ?? [], now);
+
+  // LED logic: update color based on room status
+  useEffect(() => {
+    if (!room) return;
+    
+    let ledColor: LedColor;
+    switch (status) {
+      case "available":
+        ledColor = "GREEN";
+        break;
+      case "soon":
+        ledColor = "YELLOW";
+        break;
+      case "occupied":
+        ledColor = "RED";
+        break;
+      default:
+        ledColor = "OFF";
+    }
+
+    console.log(`[LED] Setting color to ${ledColor} for room status: ${status}`);
+    try {
+      setLedColor(ledColor);
+    } catch (error) {
+      console.warn("[LED] Bridge call failed", error);
+    }
+  }, [status, !!room]);
 
   // Heartbeat: if this device matches one in localStorage, ping last_seen
   useEffect(() => {
@@ -103,10 +132,13 @@ function PanelPage() {
     if (recentlyEnded && recentlyEnded.id !== lastEndedMeetingId) {
       setLastEndedMeetingId(recentlyEnded.id);
       
-      const playLoudSound = () => {
-        const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+      const playTransitionSound = () => {
+        const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/1146/1146-preview.mp3");
         audio.crossOrigin = "anonymous";
         
+        let playCount = 0;
+        const maxPlays = 3;
+
         try {
           const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
           const source = audioContext.createMediaElementSource(audio);
@@ -115,21 +147,42 @@ function PanelPage() {
           source.connect(gainNode);
           gainNode.connect(audioContext.destination);
           
-          // Start at 0.5 (50%) and ramp to 2.0 (200%) over 3 seconds
-          gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
-          gainNode.gain.linearRampToValueAtTime(2.0, audioContext.currentTime + 3);
-          
-          audio.play().catch(err => console.warn("Audio playback failed:", err));
+          if (audioContext.state === 'suspended') {
+            audioContext.resume();
+          }
+
+          const startPlayback = () => {
+            playCount++;
+            // Use constant triple volume (3.0x) for all plays
+            const targetGain = 3.0; 
+            gainNode.gain.setTargetAtTime(targetGain, audioContext.currentTime, 0.1);
+            
+            audio.play().catch(err => console.warn(`[LED] Playback ${playCount} failed:`, err));
+          };
+
+          audio.onended = () => {
+            if (playCount < maxPlays) {
+              console.log(`[LED] Repeating sound, count: ${playCount + 1}`);
+              startPlayback();
+            } else {
+              audioContext.close().catch(() => {});
+            }
+          };
+
+          startPlayback();
+
         } catch (e) {
-          // Fallback if Web Audio API fails
-          audio.volume = 1.0;
-          audio.play().catch(err => console.warn("Fallback audio playback failed:", err));
+          // Basic Fallback
+          audio.onended = () => {
+            playCount++;
+            if (playCount < maxPlays) audio.play();
+          };
+          audio.play();
         }
       };
 
-      // Play twice: once immediately, and once after a 4-second delay
-      playLoudSound();
-      setTimeout(playLoudSound, 4000);
+      // Play the transition sound once
+      playTransitionSound();
     }
   }, [now, bookings, lastEndedMeetingId]);
 
@@ -150,8 +203,6 @@ function PanelPage() {
       </div>
     );
   }
-
-  const { status, current, next } = getRoomStatus(bookings ?? [], now);
 
   const bg =
     status === "occupied"
@@ -239,8 +290,8 @@ function PanelPage() {
         </div>
 
         {/* Bottom: Next meetings */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-8 shrink-0">
-          <div className="rounded-2xl md:rounded-3xl bg-white/10 backdrop-blur-xl p-4 md:p-6 lg:p-8 border border-white/20 shadow-2xl flex flex-col justify-center min-h-0">
+        <div className="grid grid-cols-1 gap-4 lg:gap-8 shrink-0 max-w-2xl mx-auto w-full">
+          <div className="rounded-2xl md:rounded-3xl bg-white/10 backdrop-blur-xl p-4 md:p-6 lg:p-8 border border-white/20 shadow-2xl flex flex-col justify-center min-h-0 text-center">
             <div className="text-white/60 uppercase tracking-[0.2em] text-[9px] md:text-xs font-bold shrink-0">Up next</div>
             {next ? (
               <div className="mt-1 md:mt-2 shrink-0">
@@ -252,22 +303,6 @@ function PanelPage() {
             ) : (
               <div className="mt-1 md:mt-2 text-white/80 text-sm md:text-lg italic shrink-0">No upcoming meetings today.</div>
             )}
-          </div>
-          <div className="hidden sm:flex rounded-2xl md:rounded-3xl bg-white/10 backdrop-blur-xl p-4 md:p-6 lg:p-8 border border-white/20 shadow-2xl flex flex-col justify-center min-h-0">
-            <div className="text-white/60 uppercase tracking-[0.2em] text-[9px] md:text-xs font-bold shrink-0">Today's Schedule</div>
-            <div className="mt-1 md:mt-2 space-y-1 md:space-y-1.5 overflow-hidden shrink">
-              {(bookings ?? []).filter(b => !b.cancelled).slice(0, 2).map((b) => (
-                <div key={b.id} className="flex justify-between items-center text-white/90 text-xs md:text-base border-b border-white/5 pb-0.5 last:border-0">
-                  <span className="truncate pr-4 font-medium">{b.title}</span>
-                  <span className="tabular-nums text-white/60 shrink-0 font-light">
-                    {formatTime(b.start_time)} – {formatTime(b.end_time)}
-                  </span>
-                </div>
-              ))}
-              {(bookings ?? []).filter(b => !b.cancelled).length === 0 && (
-                <div className="text-white/80 text-sm md:text-base italic">Nothing scheduled.</div>
-              )}
-            </div>
           </div>
         </div>
       </div>
