@@ -204,13 +204,6 @@ function PanelPage() {
     );
   }
 
-  const bg =
-    status === "occupied"
-      ? "from-rose-900 via-rose-700 to-rose-800"
-      : status === "soon"
-      ? "from-amber-800 via-amber-600 to-amber-700"
-      : "from-emerald-900 via-emerald-700 to-emerald-800";
-
   const stateLabel =
     status === "occupied" ? "MEETING IN SESSION" :
     status === "soon" ? "RESERVED SOON" : "AVAILABLE";
@@ -221,90 +214,82 @@ function PanelPage() {
     ? `Starts in ${formatCountdown(+new Date(next.start_time) - +now)}`
     : "Open all day";
 
-  return (
-    <div className={`min-h-screen text-white bg-gradient-to-br ${bg} relative overflow-hidden`}>
-      <div
-        className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none"
-        style={{
-          backgroundImage:
-            "radial-gradient(900px 500px at 90% 10%, white, transparent 60%), radial-gradient(700px 400px at 10% 90%, white, transparent 60%)",
-        }}
-      />
+  const statusColor =
+    status === "occupied" ? "text-rose-600" :
+    status === "soon" ? "text-amber-600" : "text-emerald-600";
 
-      <div className="relative h-screen flex flex-col p-4 md:p-8 lg:p-12 overflow-hidden">
+  return (
+    <div className="min-h-screen text-slate-900 bg-white relative overflow-hidden">
+      {/* Background Watermark with Blue Tint */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 bg-blue-900/10 z-[1]" />
+        <img 
+          src="https://images.unsplash.com/photo-1542831371-29b0f74f9713?auto=format&fit=crop&q=80&w=2070" 
+          alt="" 
+          className="w-full h-full object-cover opacity-[0.10] grayscale contrast-125"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=2070";
+          }}
+        />
+      </div>
+
+      <div className="relative z-10 h-screen flex flex-col p-4 md:p-6 lg:p-10 overflow-hidden">
         {/* Top bar */}
-        <div className="flex items-center justify-between text-white/85 flex-wrap gap-4 shrink-0">
-          <div className="flex items-center gap-5">
-            <div className="h-12 w-auto flex items-center shrink-0">
-              <img 
-                src="/logo.png" 
-                alt="Atrium" 
-                className="h-full w-auto object-contain"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = "https://e-crimebureau.com/wp-content/uploads/2025/10/cropped-APPROVED-NEW-LOGO.png";
-                }}
-              />
-            </div>
-            <div className="flex flex-col">
-              <div className="text-2xl font-bold tracking-tight leading-none">Atrium</div>
-              <div className="text-[10px] uppercase tracking-[0.3em] opacity-80 mt-1 font-medium">
-                Workspace
-              </div>
-            </div>
-          </div>
+        <div className="flex items-center justify-end text-slate-500 flex-wrap gap-4 shrink-0">
           <div className="flex items-center gap-4 md:gap-6 text-sm">
             <Clock now={now} />
             <span className="flex items-center gap-1.5 whitespace-nowrap">
-              {online ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
+              {online ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4 text-rose-500" />}
               <span className="hidden sm:inline">{online ? "Live" : "Offline"}</span>
             </span>
           </div>
         </div>
 
-        {/* Center */}
-        <div className="flex-1 flex flex-col justify-center text-center min-h-0 py-2 md:py-4">
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl xl:text-8xl font-semibold tracking-tight leading-none text-balance mx-auto shrink-0">
+        {/* Center Content */}
+        <div className="flex-1 flex flex-col justify-center items-center text-center min-h-0 py-2">
+          {/* Logo - Maximized for main attention */}
+          <div className="h-40 sm:h-56 md:h-72 lg:h-96 w-auto flex items-center justify-center mb-8 sm:mb-12 animate-fade-in shrink-0">
+            <img 
+              src="/logo.png" 
+              alt="Atrium" 
+              className="h-full w-auto object-contain"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = "https://e-crimebureau.com/wp-content/uploads/2025/10/cropped-APPROVED-NEW-LOGO.png";
+              }}
+            />
+          </div>
+
+          {/* Status Label */}
+          <h1 className={`text-2xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tighter leading-none text-balance mb-4 ${statusColor}`}>
             {stateLabel}
           </h1>
-          <div className="mt-1 md:mt-2 text-white/80 text-sm md:text-lg lg:text-xl tracking-[0.1em] font-medium uppercase px-4 shrink-0">{room.name}</div>
 
+          {/* Meeting Details */}
           {current ? (
-            <div className="mt-2 md:mt-4 max-w-4xl mx-auto px-4 overflow-hidden flex flex-col shrink">
-              <div className="text-white/70 uppercase tracking-widest text-[9px] md:text-xs shrink-0">Current meeting</div>
-              <div className="mt-0.5 md:mt-1 text-lg md:text-2xl lg:text-3xl font-medium line-clamp-1 shrink-0">{current.title}</div>
-              <div className="mt-0.5 md:mt-1 text-sm md:text-lg text-white/80 truncate shrink-0">
+            <div className="max-w-2xl mx-auto px-4 flex flex-col items-center">
+              <div className="text-slate-400 uppercase tracking-[0.2em] text-[8px] md:text-[10px] font-bold mb-1">Current Meeting</div>
+              <div className="text-base md:text-xl lg:text-2xl font-bold text-slate-800 line-clamp-1">{current.title}</div>
+              <div className="text-xs md:text-base lg:text-lg text-slate-500 mt-1">
                 {current.organizer} · {formatTime(current.start_time)} – {formatTime(current.end_time)}
               </div>
             </div>
           ) : (
-            <div className="mt-2 md:mt-4 text-base md:text-xl lg:text-2xl text-white/85 italic px-4 shrink-0">
+            <div className="text-sm md:text-lg lg:text-xl text-slate-400 italic px-4 font-medium">
               This space is ready when you are.
             </div>
           )}
 
-          <div className="mt-3 md:mt-6 inline-flex items-center gap-2 md:gap-3 self-center rounded-full bg-white/15 backdrop-blur px-3 py-1.5 md:px-5 md:py-2 text-xs md:text-base tabular-nums shrink-0">
-            <span className="h-1.5 w-1.5 md:h-2 md:w-2 rounded-full bg-white animate-pulse" />
+          {/* Countdown Badge */}
+          <div className="mt-6 inline-flex items-center gap-2 md:gap-3 rounded-full bg-slate-50 px-3 py-1.5 md:px-5 md:py-2.5 text-[10px] md:text-base lg:text-lg tabular-nums shadow-sm border border-slate-100 text-slate-500 font-medium">
+            <span className={`h-1.5 w-1.5 md:h-2 rounded-full animate-pulse ${status === 'occupied' ? 'bg-rose-400' : status === 'soon' ? 'bg-amber-400' : 'bg-emerald-400'}`} />
             {countdownLabel}
           </div>
         </div>
 
-        {/* Bottom: Next meetings */}
-        <div className="grid grid-cols-1 gap-4 lg:gap-8 shrink-0 max-w-2xl mx-auto w-full">
-          <div className="rounded-2xl md:rounded-3xl bg-white/10 backdrop-blur-xl p-4 md:p-6 lg:p-8 border border-white/20 shadow-2xl flex flex-col justify-center min-h-0 text-center">
-            <div className="text-white/60 uppercase tracking-[0.2em] text-[9px] md:text-xs font-bold shrink-0">Up next</div>
-            {next ? (
-              <div className="mt-1 md:mt-2 shrink-0">
-                <div className="text-lg md:text-2xl lg:text-3xl font-semibold truncate leading-tight">{next.title}</div>
-                <div className="mt-0.5 md:mt-1 text-sm md:text-lg text-white/80 font-medium">
-                  {next.organizer} · {formatTime(next.start_time)} – {formatTime(next.end_time)}
-                </div>
-              </div>
-            ) : (
-              <div className="mt-1 md:mt-2 text-white/80 text-sm md:text-lg italic shrink-0">No upcoming meetings today.</div>
-            )}
-          </div>
-        </div>
+        {/* Bottom spacer to maintain layout balance */}
+        <div className="h-8 md:h-12 shrink-0" />
       </div>
     </div>
   );

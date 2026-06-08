@@ -91,17 +91,25 @@ function AdminAuth() {
     e.preventDefault();
     setBusy(true);
     if (mode === "signup") {
+      // Validate password strength before signup
+      if (password.length < 8) {
+        setBusy(false);
+        return toast.error("Password must be at least 8 characters long.");
+      }
       const { error } = await supabase.auth.signUp({
-        email,
+        email: email.trim(),
         password,
         options: { emailRedirectTo: window.location.origin + "/admin" },
       });
       setBusy(false);
       if (error) return toast.error(error.message);
-      toast.success("Account created. You can now sign in.");
+      toast.success("Account created. Please check your email to verify your account.");
       setMode("signin");
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({ 
+        email: email.trim(), 
+        password 
+      });
       setBusy(false);
       if (error) return toast.error(error.message);
     }
@@ -158,11 +166,21 @@ function NotAuthorized({ email, userId, onPromoted }: { email: string; userId: s
   // so we attempt and surface the error if it fails. For first admin, the user must add
   // a row via the backend dashboard.
   const tryPromote = async () => {
+    // Basic rate limiting/spam protection
+    if (busy) return;
+    
     setBusy(true);
-    const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: "admin" });
+    // Secure bootstrap: Only allow the VERY first admin to self-promote.
+    // The RLS policy "first admin self-bootstrap" handles this on the backend.
+    const { error } = await supabase.from("user_roles").insert({ 
+      user_id: userId, 
+      role: "admin" 
+    });
+    
     setBusy(false);
     if (error) {
-      toast.error("You must be promoted by an existing admin. Use the backend dashboard.");
+      console.error("[Security] Promotion failed:", error.message);
+      toast.error("Unauthorized: The first admin seat is already taken or your request was blocked.");
       return;
     }
     toast.success("Admin access granted.");

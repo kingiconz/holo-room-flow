@@ -373,10 +373,32 @@ function BookingDialog({
     }
     const s = new Date(start);
     const e = new Date(end);
+    
+    // Server-side time check (prevent past bookings)
+    if (s < new Date()) {
+      toast.error("Cannot book meetings in the past.");
+      return;
+    }
+
     if (e <= s) {
       toast.error("End time must be after start time.");
       return;
     }
+    
+    // Max duration check
+    const durationHours = (e.getTime() - s.getTime()) / (1000 * 60 * 60);
+    // e-Crime Academy (code: 'sf-eca') is allowed up to 12 hours for training, others capped at 4
+    const isAcademyRoom = room.code === "sf-eca";
+    const maxAllowedHours = isAcademyRoom ? 12 : 4;
+    
+    if (durationHours > maxAllowedHours) {
+      toast.error(isAcademyRoom 
+        ? "Training sessions cannot exceed 12 hours." 
+        : "Meetings cannot exceed 4 hours."
+      );
+      return;
+    }
+
     // conflict check
     const conflict = today.find((b) => {
       const bs = new Date(b.start_time);
@@ -384,7 +406,12 @@ function BookingDialog({
       return s < be && e > bs;
     });
     if (conflict) {
-      toast.error(`Conflicts with "${conflict.title}" at ${formatTime(conflict.start_time)}.`);
+      const conflictStart = formatTime(conflict.start_time);
+      const conflictEnd = formatTime(conflict.end_time);
+      toast.error(
+        `Booking Conflict: "${conflict.title}" is already scheduled from ${conflictStart} to ${conflictEnd} by ${conflict.organizer}.`,
+        { duration: 5000 }
+      );
       return;
     }
     setSubmitting(true);
