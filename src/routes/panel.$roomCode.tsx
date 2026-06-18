@@ -19,6 +19,7 @@ function PanelPage() {
   const { roomCode } = Route.useParams();
   console.log("PanelPage mounting for room:", roomCode);
   const [room, setRoom] = useState<Room | null | undefined>(undefined);
+  const [roomFetchError, setRoomFetchError] = useState<string | null>(null);
   const [online, setOnline] = useState(true);
   const [lastEndedMeetingId, setLastEndedMeetingId] = useState<string | null>(null);
 
@@ -58,11 +59,14 @@ function PanelPage() {
       .eq("code", roomCode)
       .maybeSingle()
       .then(({ data, error }) => {
-        if (error) console.error("Error fetching room:", error);
-        if (mounted) {
-          console.log("Room data fetched:", data);
-          setRoom((data as Room) ?? null);
+        if (!mounted) return;
+        if (error) {
+          console.error("Error fetching room:", error);
+          setRoomFetchError(error.message);
+          return;
         }
+        console.log("Room data fetched:", data);
+        setRoom((data as Room) ?? null);
       });
     const handleOnline = () => setOnline(true);
     const handleOffline = () => setOnline(false);
@@ -111,7 +115,13 @@ function PanelPage() {
     const deviceId = typeof window !== "undefined" ? localStorage.getItem("atrium.deviceId") : null;
     if (!deviceId) return;
     const beat = () => {
-      supabase.from("devices").update({ last_seen: new Date().toISOString() }).eq("device_id", deviceId);
+      supabase
+        .from("devices")
+        .update({ last_seen: new Date().toISOString() })
+        .eq("device_id", deviceId)
+        .then(({ error }) => {
+          if (error) console.error("[Heartbeat] Failed to update last_seen:", error.message);
+        });
     };
     beat();
     const id = setInterval(beat, 30000);
@@ -186,10 +196,20 @@ function PanelPage() {
     }
   }, [now, bookings, lastEndedMeetingId]);
 
-  if (room === undefined) {
+  if (room === undefined && !roomFetchError) {
     return (
       <div className="min-h-screen grid place-items-center bg-gradient-panel text-white">
         <div className="opacity-80">Loading…</div>
+      </div>
+    );
+  }
+  if (roomFetchError) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-gradient-panel text-white">
+        <div className="text-center">
+          <div className="text-2xl font-semibold">Failed to load room</div>
+          <div className="opacity-70 mt-2">{roomFetchError}</div>
+        </div>
       </div>
     );
   }

@@ -20,7 +20,11 @@ export function useRooms() {
       .select("*")
       .order("floor_order")
       .order("name")
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("[useRooms] Failed to fetch rooms:", error.message);
+          return;
+        }
         if (mounted && data) setRooms(data as Room[]);
       });
     const ch = supabase
@@ -31,7 +35,13 @@ export function useRooms() {
           .select("*")
           .order("floor_order")
           .order("name")
-          .then(({ data }) => data && setRooms(data as Room[]));
+          .then(({ data, error }) => {
+            if (error) {
+              console.error("[useRooms] Failed to refresh rooms:", error.message);
+              return;
+            }
+            if (data) setRooms(data as Room[]);
+          });
       })
       .subscribe();
     return () => {
@@ -55,7 +65,11 @@ export function useBookings(filter?: { roomId?: string }) {
         .gte("end_time", since)
         .order("start_time");
       if (filter?.roomId) q = q.eq("room_id", filter.roomId);
-      const { data } = await q;
+      const { data, error } = await q;
+      if (error) {
+        console.error("[useBookings] Failed to fetch bookings:", error.message);
+        return;
+      }
       if (mounted && data) setBookings(data as Booking[]);
     };
     fetchAll();
@@ -80,10 +94,14 @@ export function useDevices() {
   useEffect(() => {
     let mounted = true;
     const fetchAll = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("devices")
         .select("*")
         .order("created_at", { ascending: false });
+      if (error) {
+        console.error("[useDevices] Failed to fetch devices:", error.message);
+        return;
+      }
       if (mounted && data) setDevices(data as DeviceRow[]);
     };
     fetchAll();
