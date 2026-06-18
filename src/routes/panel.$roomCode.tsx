@@ -4,12 +4,9 @@ import { setLedColor, type LedColor } from "@/plugins/ledBridge";
 import { Wifi, WifiOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBookings, useNow } from "@/lib/use-realtime";
-import {
-  getRoomStatus,
-  formatCountdown,
-  formatTime,
-  type Room,
-} from "@/lib/rooms";
+import { getRoomStatus, formatCountdown, formatTime, statusColor, type Room } from "@/lib/rooms";
+import { AppLogo } from "@/components/AppLogo";
+import { CenteredMessage } from "@/components/CenteredMessage";
 
 export const Route = createFileRoute("/panel/$roomCode")({
   component: PanelPage,
@@ -82,7 +79,7 @@ function PanelPage() {
   // LED logic: update color based on room status
   useEffect(() => {
     if (!room) return;
-    
+
     let ledColor: LedColor;
     switch (status) {
       case "available":
@@ -111,7 +108,10 @@ function PanelPage() {
     const deviceId = typeof window !== "undefined" ? localStorage.getItem("atrium.deviceId") : null;
     if (!deviceId) return;
     const beat = () => {
-      supabase.from("devices").update({ last_seen: new Date().toISOString() }).eq("device_id", deviceId);
+      supabase
+        .from("devices")
+        .update({ last_seen: new Date().toISOString() })
+        .eq("device_id", deviceId);
     };
     beat();
     const id = setInterval(beat, 30000);
@@ -131,11 +131,13 @@ function PanelPage() {
 
     if (recentlyEnded && recentlyEnded.id !== lastEndedMeetingId) {
       setLastEndedMeetingId(recentlyEnded.id);
-      
+
       const playTransitionSound = () => {
-        const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/1146/1146-preview.mp3");
+        const audio = new Audio(
+          "https://assets.mixkit.co/active_storage/sfx/1146/1146-preview.mp3",
+        );
         audio.crossOrigin = "anonymous";
-        
+
         let playCount = 0;
         const maxPlays = 3;
 
@@ -143,21 +145,21 @@ function PanelPage() {
           const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
           const source = audioContext.createMediaElementSource(audio);
           const gainNode = audioContext.createGain();
-          
+
           source.connect(gainNode);
           gainNode.connect(audioContext.destination);
-          
-          if (audioContext.state === 'suspended') {
+
+          if (audioContext.state === "suspended") {
             audioContext.resume();
           }
 
           const startPlayback = () => {
             playCount++;
             // Use constant triple volume (3.0x) for all plays
-            const targetGain = 3.0; 
+            const targetGain = 3.0;
             gainNode.gain.setTargetAtTime(targetGain, audioContext.currentTime, 0.1);
-            
-            audio.play().catch(err => console.warn(`[LED] Playback ${playCount} failed:`, err));
+
+            audio.play().catch((err) => console.warn(`[LED] Playback ${playCount} failed:`, err));
           };
 
           audio.onended = () => {
@@ -170,7 +172,6 @@ function PanelPage() {
           };
 
           startPlayback();
-
         } catch (e) {
           // Basic Fallback
           audio.onended = () => {
@@ -188,48 +189,50 @@ function PanelPage() {
 
   if (room === undefined) {
     return (
-      <div className="min-h-screen grid place-items-center bg-gradient-panel text-white">
+      <CenteredMessage className="min-h-screen bg-gradient-panel text-white">
         <div className="opacity-80">Loading…</div>
-      </div>
+      </CenteredMessage>
     );
   }
   if (room === null) {
     return (
-      <div className="min-h-screen grid place-items-center bg-gradient-panel text-white">
+      <CenteredMessage className="min-h-screen bg-gradient-panel text-white">
         <div className="text-center">
           <div className="text-2xl font-semibold">Unknown room code</div>
           <div className="opacity-70 mt-2">"{roomCode}" is not registered.</div>
         </div>
-      </div>
+      </CenteredMessage>
     );
   }
 
   const stateLabel =
-    status === "occupied" ? "MEETING IN SESSION" :
-    status === "soon" ? "RESERVED SOON" : "AVAILABLE";
+    status === "occupied"
+      ? "MEETING IN SESSION"
+      : status === "soon"
+        ? "RESERVED SOON"
+        : "AVAILABLE";
 
   const countdownLabel = current
     ? `Ends in ${formatCountdown(+new Date(current.end_time) - +now)}`
     : next
-    ? `Starts in ${formatCountdown(+new Date(next.start_time) - +now)}`
-    : "Open all day";
+      ? `Starts in ${formatCountdown(+new Date(next.start_time) - +now)}`
+      : "Open all day";
 
-  const statusColor =
-    status === "occupied" ? "text-rose-600" :
-    status === "soon" ? "text-amber-600" : "text-emerald-600";
+  const panelStatusColor = statusColor(status);
 
   return (
     <div className="min-h-screen text-slate-900 bg-white relative overflow-hidden">
       {/* Background Watermark with Blue Tint */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <div className="absolute inset-0 bg-blue-900/10 z-[1]" />
-        <img 
-          src="https://images.unsplash.com/photo-1542831371-29b0f74f9713?auto=format&fit=crop&q=80&w=2070" 
-          alt="" 
+        <img
+          src="https://images.unsplash.com/photo-1542831371-29b0f74f9713?auto=format&fit=crop&q=80&w=2070"
+          alt=""
           className="w-full h-full object-cover opacity-[0.10] grayscale contrast-125"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
-            target.src = "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=2070";
+            target.src =
+              "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=2070";
           }}
         />
       </div>
@@ -240,7 +243,11 @@ function PanelPage() {
           <div className="flex items-center gap-4 md:gap-6 text-sm">
             <Clock now={now} />
             <span className="flex items-center gap-1.5 whitespace-nowrap">
-              {online ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4 text-rose-500" />}
+              {online ? (
+                <Wifi className="h-4 w-4" />
+              ) : (
+                <WifiOff className="h-4 w-4 text-rose-500" />
+              )}
               <span className="hidden sm:inline">{online ? "Live" : "Offline"}</span>
             </span>
           </div>
@@ -250,29 +257,28 @@ function PanelPage() {
         <div className="flex-1 flex flex-col justify-center items-center text-center min-h-0 py-2">
           {/* Logo - Maximized for main attention */}
           <div className="h-40 sm:h-56 md:h-72 lg:h-96 w-auto flex items-center justify-center mb-8 sm:mb-12 animate-fade-in shrink-0">
-            <img 
-              src="/logo.png" 
-              alt="Atrium" 
-              className="h-full w-auto object-contain"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = "https://e-crimebureau.com/wp-content/uploads/2025/10/cropped-APPROVED-NEW-LOGO.png";
-              }}
-            />
+            <AppLogo />
           </div>
 
           {/* Status Label */}
-          <h1 className={`text-2xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tighter leading-none text-balance mb-4 ${statusColor}`}>
+          <h1
+            className={`text-2xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tighter leading-none text-balance mb-4 ${panelStatusColor}`}
+          >
             {stateLabel}
           </h1>
 
           {/* Meeting Details */}
           {current ? (
             <div className="max-w-2xl mx-auto px-4 flex flex-col items-center">
-              <div className="text-slate-400 uppercase tracking-[0.2em] text-[8px] md:text-[10px] font-bold mb-1">Current Meeting</div>
-              <div className="text-base md:text-xl lg:text-2xl font-bold text-slate-800 line-clamp-1">{current.title}</div>
+              <div className="text-slate-400 uppercase tracking-[0.2em] text-[8px] md:text-[10px] font-bold mb-1">
+                Current Meeting
+              </div>
+              <div className="text-base md:text-xl lg:text-2xl font-bold text-slate-800 line-clamp-1">
+                {current.title}
+              </div>
               <div className="text-xs md:text-base lg:text-lg text-slate-500 mt-1">
-                {current.organizer} · {formatTime(current.start_time)} – {formatTime(current.end_time)}
+                {current.organizer} · {formatTime(current.start_time)} –{" "}
+                {formatTime(current.end_time)}
               </div>
             </div>
           ) : (
@@ -283,7 +289,9 @@ function PanelPage() {
 
           {/* Countdown Badge */}
           <div className="mt-6 inline-flex items-center gap-2 md:gap-3 rounded-full bg-slate-50 px-3 py-1.5 md:px-5 md:py-2.5 text-[10px] md:text-base lg:text-lg tabular-nums shadow-sm border border-slate-100 text-slate-500 font-medium">
-            <span className={`h-1.5 w-1.5 md:h-2 rounded-full animate-pulse ${status === 'occupied' ? 'bg-rose-400' : status === 'soon' ? 'bg-amber-400' : 'bg-emerald-400'}`} />
+            <span
+              className={`h-1.5 w-1.5 md:h-2 rounded-full animate-pulse ${status === "occupied" ? "bg-rose-400" : status === "soon" ? "bg-amber-400" : "bg-emerald-400"}`}
+            />
             {countdownLabel}
           </div>
         </div>
