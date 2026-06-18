@@ -17,14 +17,12 @@ export const Route = createFileRoute("/panel/$roomCode")({
 
 function PanelPage() {
   const { roomCode } = Route.useParams();
-  console.log("PanelPage mounting for room:", roomCode);
   const [room, setRoom] = useState<Room | null | undefined>(undefined);
   const [online, setOnline] = useState(true);
   const [lastEndedMeetingId, setLastEndedMeetingId] = useState<string | null>(null);
 
   // Fullscreen logic
   useEffect(() => {
-    console.log("Fullscreen effect running");
     const enterFullscreen = async () => {
       try {
         if (!document.fullscreenElement) {
@@ -40,7 +38,6 @@ function PanelPage() {
 
     // Also attempt on first click anywhere
     const handleFirstClick = () => {
-      console.log("First click detected, requesting fullscreen");
       enterFullscreen();
       window.removeEventListener("click", handleFirstClick);
     };
@@ -50,7 +47,6 @@ function PanelPage() {
   }, []);
 
   useEffect(() => {
-    console.log("Room fetch effect running for:", roomCode);
     let mounted = true;
     supabase
       .from("rooms")
@@ -58,9 +54,8 @@ function PanelPage() {
       .eq("code", roomCode)
       .maybeSingle()
       .then(({ data, error }) => {
-        if (error) console.error("Error fetching room:", error);
+        if (error) console.error("[Room] fetch error:", error.message);
         if (mounted) {
-          console.log("Room data fetched:", data);
           setRoom((data as Room) ?? null);
         }
       });
@@ -98,11 +93,10 @@ function PanelPage() {
         ledColor = "OFF";
     }
 
-    console.log(`[LED] Setting color to ${ledColor} for room status: ${status}`);
     try {
       setLedColor(ledColor);
-    } catch (error) {
-      console.warn("[LED] Bridge call failed", error);
+    } catch {
+      // LED bridge unavailable in web context
     }
   }, [status, !!room]);
 
@@ -162,7 +156,7 @@ function PanelPage() {
 
           audio.onended = () => {
             if (playCount < maxPlays) {
-              console.log(`[LED] Repeating sound, count: ${playCount + 1}`);
+
               startPlayback();
             } else {
               audioContext.close().catch(() => {});

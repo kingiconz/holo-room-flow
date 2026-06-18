@@ -37,7 +37,6 @@ function SetupPage() {
 
   // Set LED to YELLOW while in setup
   useEffect(() => {
-    console.log("[LED] Setting color to YELLOW for setup");
     setLedColor("YELLOW");
   }, []);
 
