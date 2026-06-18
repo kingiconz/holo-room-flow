@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Loader2, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { DeviceRow, Room } from "@/lib/rooms";
+import { AppLogo } from "@/components/AppLogo";
 import { setLedColor } from "@/plugins/ledBridge";
 
 export const Route = createFileRoute("/setup")({
@@ -10,9 +11,7 @@ export const Route = createFileRoute("/setup")({
 });
 
 async function generateSequentialDeviceId(): Promise<string> {
-  const { data: devices } = await supabase
-    .from("devices")
-    .select("device_id");
+  const { data: devices } = await supabase.from("devices").select("device_id");
 
   let maxSequence = 0;
   if (devices) {
@@ -46,12 +45,12 @@ function SetupPage() {
     let mounted = true;
     (async () => {
       let id = localStorage.getItem("atrium.deviceId");
-      
+
       if (!id) {
         id = await generateSequentialDeviceId();
         localStorage.setItem("atrium.deviceId", id);
       }
-      
+
       if (!mounted) return;
       setDeviceId(id);
 
@@ -133,20 +132,9 @@ function SetupPage() {
       />
       <div className="relative max-w-xl w-full text-center animate-fade-in">
         <div className="mx-auto h-40 w-auto flex items-center justify-center mb-10">
-          <img 
-            src="/logo.png" 
-            alt="Atrium" 
-            className="h-full w-auto object-contain"
-            style={{ maxWidth: "100%", maxHeight: "160px" }}
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = "https://e-crimebureau.com/wp-content/uploads/2025/10/cropped-APPROVED-NEW-LOGO.png";
-            }}
-          />
+          <AppLogo style={{ maxWidth: "100%", maxHeight: "160px" }} />
         </div>
-        <div className="text-xs uppercase tracking-[0.35em] text-white/70">
-          Tablet Provisioning
-        </div>
+        <div className="text-xs uppercase tracking-[0.35em] text-white/70">Tablet Provisioning</div>
         <h1 className="mt-3 text-4xl md:text-5xl font-semibold tracking-tight">
           {assignedRoom ? "Assignment received" : "Waiting for Room Assignment"}
         </h1>
@@ -157,12 +145,8 @@ function SetupPage() {
         </p>
 
         <div className="mt-10 rounded-2xl glass-dark border border-white/15 p-6">
-          <div className="text-xs uppercase tracking-widest text-white/60">
-            Device identifier
-          </div>
-          <div className="mt-2 font-mono text-2xl tracking-wider">
-            {deviceId ?? "Generating…"}
-          </div>
+          <div className="text-xs uppercase tracking-widest text-white/60">Device identifier</div>
+          <div className="mt-2 font-mono text-2xl tracking-wider">{deviceId ?? "Generating…"}</div>
           <div className="mt-6 flex items-center justify-center gap-2 text-sm text-white/80">
             {assignedRoom ? (
               <>

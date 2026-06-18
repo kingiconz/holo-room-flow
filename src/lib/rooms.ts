@@ -38,9 +38,7 @@ export function getRoomStatus(
     .sort((a, b) => +new Date(a.start_time) - +new Date(b.start_time));
 
   const current =
-    active.find(
-      (b) => new Date(b.start_time) <= now && new Date(b.end_time) > now,
-    ) ?? null;
+    active.find((b) => new Date(b.start_time) <= now && new Date(b.end_time) > now) ?? null;
 
   const upcoming = active.filter((b) => new Date(b.start_time) > now);
   const next = upcoming[0] ?? null;
@@ -98,4 +96,21 @@ export function formatCountdown(ms: number): string {
   const s = total % 60;
   if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+export function filterBookingsByRoom(bookings: Booking[], roomId: string): Booking[] {
+  return bookings.filter((b) => b.room_id === roomId);
+}
+
+export function toDatetimeLocal(d: Date): string {
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export function statusColor(status: RoomStatus): string {
+  return status === "occupied"
+    ? "text-rose-600"
+    : status === "soon"
+      ? "text-amber-600"
+      : "text-emerald-600";
 }

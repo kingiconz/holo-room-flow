@@ -1,17 +1,19 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Search, CalendarDays, Sparkles, MapPin, Clock, ArrowRight } from "lucide-react";
+import { Search, CalendarDays, MapPin, Clock, ArrowRight } from "lucide-react";
 import { useRooms, useBookings, useNow } from "@/lib/use-realtime";
 import {
   getRoomStatus,
   STATUS_META,
   formatTime,
+  filterBookingsByRoom,
+  toDatetimeLocal,
   type Room,
   type Booking,
 } from "@/lib/rooms";
+import { AppLogo } from "@/components/AppLogo";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -61,9 +63,11 @@ function HomePage() {
 
   const stats = useMemo(() => {
     if (!rooms || !bookings) return { total: 0, available: 0, occupied: 0, soon: 0 };
-    let available = 0, occupied = 0, soon = 0;
+    let available = 0,
+      occupied = 0,
+      soon = 0;
     rooms.forEach((r) => {
-      const s = getRoomStatus(bookings.filter((b) => b.room_id === r.id), now).status;
+      const s = getRoomStatus(filterBookingsByRoom(bookings, r.id), now).status;
       if (s === "available") available++;
       else if (s === "occupied") occupied++;
       else soon++;
@@ -130,7 +134,7 @@ function HomePage() {
               <RoomCard
                 key={room.id}
                 room={room}
-                bookings={bookings.filter((b) => b.room_id === room.id)}
+                bookings={filterBookingsByRoom(bookings, room.id)}
                 now={now}
                 onBook={() => setBookingRoom(room)}
                 delay={i * 60}
@@ -157,16 +161,8 @@ function Header() {
       <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="h-12 w-auto flex items-center">
-              <img 
-                src="/logo.png" 
-                alt="Atrium" 
-                className="h-full w-auto object-contain"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = "https://e-crimebureau.com/wp-content/uploads/2025/10/cropped-APPROVED-NEW-LOGO.png";
-                }}
-              />
-            </div>
+            <AppLogo />
+          </div>
           <div>
             <div className="text-lg font-semibold tracking-tight leading-none">Atrium</div>
             <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -208,9 +204,13 @@ function StatPill({
   accent?: "success" | "warning" | "danger";
 }) {
   const dot =
-    accent === "success" ? "bg-emerald-400" :
-    accent === "warning" ? "bg-amber-400" :
-    accent === "danger" ? "bg-rose-400" : "bg-white/60";
+    accent === "success"
+      ? "bg-emerald-400"
+      : accent === "warning"
+        ? "bg-amber-400"
+        : accent === "danger"
+          ? "bg-rose-400"
+          : "bg-white/60";
   return (
     <div className="glass-dark rounded-xl px-4 py-3 text-white">
       <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-white/70">
@@ -277,9 +277,7 @@ function RoomCard({
               {room.name}
             </h3>
           </div>
-          <span className={`text-xs px-2.5 py-1 rounded-full ${meta.chip}`}>
-            {meta.label}
-          </span>
+          <span className={`text-xs px-2.5 py-1 rounded-full ${meta.chip}`}>{meta.label}</span>
         </div>
 
         <div className="mt-5 space-y-2.5 text-sm">
@@ -289,9 +287,7 @@ function RoomCard({
                 In session
               </div>
               <div className="font-medium text-rose-900 truncate">{current.title}</div>
-              <div className="text-rose-700/80 text-xs">
-                until {formatTime(current.end_time)}
-              </div>
+              <div className="text-rose-700/80 text-xs">until {formatTime(current.end_time)}</div>
             </div>
           ) : (
             <div className="rounded-lg bg-emerald-50/60 border border-emerald-100 px-3 py-2.5">
@@ -332,11 +328,6 @@ function RoomCard({
   );
 }
 
-function toDatetimeLocal(d: Date) {
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 function BookingDialog({
   room,
   bookings,
@@ -373,7 +364,7 @@ function BookingDialog({
     }
     const s = new Date(start);
     const e = new Date(end);
-    
+
     // Server-side time check (prevent past bookings)
     if (s < new Date()) {
       toast.error("Cannot book meetings in the past.");
@@ -384,17 +375,18 @@ function BookingDialog({
       toast.error("End time must be after start time.");
       return;
     }
-    
+
     // Max duration check
     const durationHours = (e.getTime() - s.getTime()) / (1000 * 60 * 60);
     // e-Crime Academy (code: 'sf-eca') is allowed up to 12 hours for training, others capped at 4
     const isAcademyRoom = room.code === "sf-eca";
     const maxAllowedHours = isAcademyRoom ? 12 : 4;
-    
+
     if (durationHours > maxAllowedHours) {
-      toast.error(isAcademyRoom 
-        ? "Training sessions cannot exceed 12 hours." 
-        : "Meetings cannot exceed 4 hours."
+      toast.error(
+        isAcademyRoom
+          ? "Training sessions cannot exceed 12 hours."
+          : "Meetings cannot exceed 4 hours.",
       );
       return;
     }
@@ -410,7 +402,7 @@ function BookingDialog({
       const conflictEnd = formatTime(conflict.end_time);
       toast.error(
         `Booking Conflict: "${conflict.title}" is already scheduled from ${conflictStart} to ${conflictEnd} by ${conflict.organizer}.`,
-        { duration: 5000 }
+        { duration: 5000 },
       );
       return;
     }
@@ -438,9 +430,7 @@ function BookingDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-2xl">{room.name}</DialogTitle>
-          <DialogDescription>
-            {room.floor} · Reserve a time slot below.
-          </DialogDescription>
+          <DialogDescription>{room.floor} · Reserve a time slot below.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -467,11 +457,21 @@ function BookingDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="start">Start</Label>
-              <Input id="start" type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
+              <Input
+                id="start"
+                type="datetime-local"
+                value={start}
+                onChange={(e) => setStart(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="end">End</Label>
-              <Input id="end" type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} />
+              <Input
+                id="end"
+                type="datetime-local"
+                value={end}
+                onChange={(e) => setEnd(e.target.value)}
+              />
             </div>
           </div>
 
