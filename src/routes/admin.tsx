@@ -46,7 +46,13 @@ function AdminPage() {
         setLoading(false);
       }
     });
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
+    supabase.auth.getSession().then(({ data: { session: s }, error }) => {
+      if (error) {
+        console.error("[Admin] Failed to get session:", error.message);
+        toast.error("Failed to restore session. Please sign in again.");
+        setLoading(false);
+        return;
+      }
       if (s?.user) {
         setSession({ userId: s.user.id, email: s.user.email ?? "" });
         checkRole(s.user.id);
@@ -58,12 +64,16 @@ function AdminPage() {
   }, []);
 
   const checkRole = async (userId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId)
       .eq("role", "admin")
       .maybeSingle();
+    if (error) {
+      console.error("[Admin] Failed to check user role:", error.message);
+      toast.error("Failed to verify admin status. Please try again.");
+    }
     setIsAdmin(!!data);
     setLoading(false);
   };

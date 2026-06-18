@@ -10,9 +10,13 @@ export const Route = createFileRoute("/setup")({
 });
 
 async function generateSequentialDeviceId(): Promise<string> {
-  const { data: devices } = await supabase
+  const { data: devices, error } = await supabase
     .from("devices")
     .select("device_id");
+
+  if (error) {
+    console.error("[Setup] Failed to fetch devices for ID generation:", error.message);
+  }
 
   let maxSequence = 0;
   if (devices) {
@@ -33,6 +37,7 @@ function SetupPage() {
   const navigate = useNavigate();
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [registering, setRegistering] = useState(true);
+  const [registrationError, setRegistrationError] = useState<string | null>(null);
   const [assignedRoom, setAssignedRoom] = useState<Room | null>(null);
 
   // Set LED to YELLOW while in setup
@@ -56,19 +61,35 @@ function SetupPage() {
       setDeviceId(id);
 
       // Upsert by device_id
-      const { data: existing } = await supabase
+      const { data: existing, error: fetchError } = await supabase
         .from("devices")
         .select("*")
         .eq("device_id", id)
         .maybeSingle();
 
+      if (fetchError) {
+        console.error("[Setup] Failed to check existing device:", fetchError.message);
+        setRegistrationError(fetchError.message);
+        setRegistering(false);
+        return;
+      }
+
       if (!existing) {
-        await supabase.from("devices").insert({ device_id: id });
+        const { error: insertError } = await supabase.from("devices").insert({ device_id: id });
+        if (insertError) {
+          console.error("[Setup] Failed to register device:", insertError.message);
+          setRegistrationError(insertError.message);
+          setRegistering(false);
+          return;
+        }
       } else {
-        await supabase
+        const { error: updateError } = await supabase
           .from("devices")
           .update({ last_seen: new Date().toISOString() })
           .eq("device_id", id);
+        if (updateError) {
+          console.error("[Setup] Failed to update device:", updateError.message);
+        }
       }
       setRegistering(false);
     })();
@@ -83,18 +104,27 @@ function SetupPage() {
     let mounted = true;
 
     const check = async () => {
-      const { data: device } = await supabase
+      const { data: device, error: deviceError } = await supabase
         .from("devices")
         .select("*")
         .eq("device_id", deviceId)
         .maybeSingle<DeviceRow>();
 
+      if (deviceError) {
+        console.error("[Setup] Failed to poll device assignment:", deviceError.message);
+        return;
+      }
+
       if (device?.room_id) {
-        const { data: room } = await supabase
+        const { data: room, error: roomError } = await supabase
           .from("rooms")
           .select("*")
           .eq("id", device.room_id)
           .maybeSingle<Room>();
+        if (roomError) {
+          console.error("[Setup] Failed to fetch assigned room:", roomError.message);
+          return;
+        }
         if (room && mounted) {
           setAssignedRoom(room);
           setTimeout(() => {
@@ -168,6 +198,11 @@ function SetupPage() {
               <>
                 <CheckCircle2 className="h-4 w-4 text-emerald-300" />
                 Assigned to {assignedRoom.name}
+              </>
+            ) : registrationError ? (
+              <>
+                <span className="h-2 w-2 rounded-full bg-rose-400" />
+                Registration failed: {registrationError}
               </>
             ) : registering ? (
               <>
