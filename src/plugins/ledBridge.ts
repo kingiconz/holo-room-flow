@@ -15,10 +15,8 @@ declare global {
 
 export function setLedColor(color: LedColor) {
   if (!window.Android?.setLedColor) {
-    console.warn("LED bridge unavailable");
     return;
   }
 
-  const result = window.Android.setLedColor(color);
-  console.log("[LED]", result);
+  window.Android.setLedColor(color);
 }
